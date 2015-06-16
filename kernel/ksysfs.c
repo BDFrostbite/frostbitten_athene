@@ -205,9 +205,9 @@ static struct attribute_group kernel_attr_group = {
 };
 
 
-static unsigned int Lgentle_fair_sleepers = 0;
-static unsigned int Larch_power = 1;
+static unsigned int Lgentle_fair_sleepers = 1;
 extern void relay_gfs(unsigned int gfs);
+static unsigned int Larch_power = 1;
 extern void relay_ap(unsigned int ap);
 
 static ssize_t gentle_fair_sleepers_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
@@ -221,47 +221,45 @@ static ssize_t gentle_fair_sleepers_store(struct kobject *kobj, struct kobj_attr
 	ret = sscanf(buf, "%u", &input);
 	if (input != 0 && input != 1)
 		input = 0;
-
+	
 	Lgentle_fair_sleepers = input;
 	relay_gfs(Lgentle_fair_sleepers);
 	return count;
 }
 
+KERNEL_ATTR_RW(gentle_fair_sleepers);
+
 static ssize_t arch_power_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%u\n", Larch_power);
+ return sprintf(buf, "%u\n", Larch_power);
 }
+
 static ssize_t arch_power_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
-	unsigned int input;
-	int ret;
-	ret = sscanf(buf, "%u", &input);
-	if (input != 0 && input != 1)
-		input = 0;
+ unsigned int input;
+ int ret;
+ ret = sscanf(buf, "%u", &input);
+ if (input != 0 && input != 1)
+ input = 0;
 
-	Larch_power = input;
-	relay_ap(Larch_power);
-	return count;
+ Larch_power = input;
+ relay_ap(Larch_power);
+ return count;
 }
+KERNEL_ATTR_RW(arch_power);
 
-static struct kobj_attribute gentle_fair_sleepers_attribute =
-__ATTR(gentle_fair_sleepers, 0666, gentle_fair_sleepers_show, gentle_fair_sleepers_store);
-
-static struct kobj_attribute arch_power_attribute =
-__ATTR(arch_power, 0666, arch_power_show, arch_power_store);
-
-static struct attribute *sched_feat_attrs[] = {
-&gentle_fair_sleepers_attribute.attr,
-&arch_power_attribute.attr,
-NULL,
+static struct attribute * sched_features_attrs[] = {
+ &gentle_fair_sleepers_attr.attr,
+ &arch_power_attr.attr,
+	NULL
 };
 
-static struct attribute_group sched_feat_attr_group = {
-.attrs = sched_feat_attrs,
+static struct attribute_group sched_features_attr_group = {
+.attrs = sched_features_attrs,
 };
 
-/* Initialize sched features sysfs folder */
-static struct kobject *sched_feat_kobj;
+/* Initialize fast charge sysfs folder */
+static struct kobject *sched_features_kobj;
 
 static int __init ksysfs_init(void)
 {
@@ -277,11 +275,11 @@ static int __init ksysfs_init(void)
 	if (error)
 		goto kset_exit;
 
-	sched_feat_kobj = kobject_create_and_add("sched", kernel_kobj);
-	retval = sysfs_create_group(sched_feat_kobj, &sched_feat_attr_group);
+	sched_features_kobj = kobject_create_and_add("sched", kernel_kobj);
+	error = sysfs_create_group(sched_features_kobj, &sched_features_attr_group);
 
-	if (retval)
-		kobject_put(sched_feat_kobj);
+	if (error)
+		kobject_put(sched_features_kobj);
 
 	if (notes_size > 0) {
 		notes_attr.size = notes_size;
